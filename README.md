@@ -13,7 +13,7 @@ yarn
 ### Compile the contracts
 
 ```bash
-force build
+forge build
 ```
 
 ### Testing
@@ -21,7 +21,7 @@ force build
 To run the tests, use the following command:
 
 ```bash
-force test
+forge test
 ```
 
 ### Deployment
