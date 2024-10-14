@@ -13,14 +13,15 @@ import { ILicenseTemplate } from "@story-protocol/protocol-core/contracts/interf
 import { IRoyaltyModule } from "@story-protocol/protocol-core/contracts/interfaces/modules/royalty/IRoyaltyModule.sol";
 import { IIPAccount } from "@story-protocol/protocol-core/contracts/interfaces/IIPAccount.sol";
 
-import { IStoryProtocolGateway } from "./IStoryProtocolGateway.sol";
+import { IStoryProtocolGateway, MakeDerivative, IPMetadata } from "./IStoryProtocolGateway.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "./AccessControl.sol";
-import "./PunkgaContestNFT.sol";
+// import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+// import { ContextUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import { AccessControl } from "./AccessControl.sol";
+import { LaunchpadNFT } from "./PunkgaContestNFT.sol";
 
 contract StoryCampaign is AccessControl, IERC721Receiver {
     using SafeERC20 for IERC20;
@@ -28,9 +29,9 @@ contract StoryCampaign is AccessControl, IERC721Receiver {
     address public ipAssetRegistry = 0x1a9d0d28a0422F26D31Be72Edc6f13ea4371E11B;
     address public licensingModule = 0xd81fd78f557b457b4350cB95D20b547bFEb4D857;
     address public licenseToken = 0xc7A302E03cd7A304394B401192bfED872af501BE;
-    address public licenseTemplate = 0x0752f61E59fD2D39193a74610F1bd9a6Ade2E3f9; 
-    address public coreMetadataView = 0x48ecAa9F197135A4614d1c7A5Db5641ffd8ad2b9; 
-    address public licenseRegistry = 0xedf8e338F05f7B1b857C3a8d3a0aBB4bc2c41723; 
+    address public licenseTemplate = 0x0752f61E59fD2D39193a74610F1bd9a6Ade2E3f9;
+    address public coreMetadataView = 0x48ecAa9F197135A4614d1c7A5Db5641ffd8ad2b9;
+    address public licenseRegistry = 0xedf8e338F05f7B1b857C3a8d3a0aBB4bc2c41723;
     address public royaltyModule = 0x3C27b2D7d30131D4b58C3584FD7c86e3358744de;
 
     address public collectionAddress;
@@ -43,22 +44,9 @@ contract StoryCampaign is AccessControl, IERC721Receiver {
     //creator address -> count
     mapping(address => uint256) public userMintCount;
 
-    constructor(address _owner, address _storyProtocolGateway) public AccessControl(_owner)  {
+    constructor(address _owner, address _storyProtocolGateway) public AccessControl(_owner) {
         SPG_ADDRESS = _storyProtocolGateway;
-    }    
-
-    struct MakeDerivative {
-        address[] parentIpIds;
-        uint256[] licenseTermsIds;
-        bytes royaltyContext;
     }
-
-    struct IPMetadata {
-        string ipMetadataURI;
-        bytes32 ipMetadataHash;
-        string nftMetadataURI;
-        bytes32 nftMetadataHash;
-    }    
 
     event CollectionCreated(address indexed nftContract);
     /**
@@ -70,7 +58,7 @@ contract StoryCampaign is AccessControl, IERC721Receiver {
 
     // function _owns(address _licensorIpid) internal view returns (bool) {
     //     return (ICoreMetadataViewModule(coreMetadataView).getOwner(_licensorIpid) == msg.sender);
-    // }  
+    // }
 
     function setStoryProtocolGateway(address _addr) public onlyOwner {
         SPG_ADDRESS = _addr;
@@ -78,53 +66,45 @@ contract StoryCampaign is AccessControl, IERC721Receiver {
 
     function setIpAssetRegistry(address _addr) public onlyOwner {
         ipAssetRegistry = _addr;
-    }      
+    }
 
     function setLicensingModule(address _addr) public onlyOwner {
         licensingModule = _addr;
-    }      
+    }
 
     function setMaxParents(uint256 _maxParents) public onlyOwner {
         maxParents = _maxParents;
-    }         
+    }
 
     function setMaxIpasset(uint256 _maxIpasset) public onlyOwner {
         maxParents = _maxIpasset;
-    }            
+    }
 
     function setLicenseToken(address _addr) public onlyOwner {
         licenseToken = _addr;
-    }     
+    }
 
     function setCoreMetadataView(address _addr) public onlyOwner {
         coreMetadataView = _addr;
-    }    
+    }
 
     function setLicenseRegistry(address _addr) public onlyOwner {
         licenseRegistry = _addr;
-    }       
+    }
 
     function setCollectionAddress(address _addr) public onlyOwner {
         collectionAddress = _addr;
-    }    
+    }
 
     function setLicenseTemplate(address _addr) public onlyOwner {
         licenseTemplate = _addr;
-    }       
+    }
 
     function setRoyaltyModule(address _addr) public onlyOwner {
         royaltyModule = _addr;
-    }       
+    }
 
-    function getToken(address ipAccountAddress) public view returns (uint chainId, address tokenContract, uint tokenId) {
-        (chainId, tokenContract, tokenId) = IIPAccount(payable(ipAccountAddress)).token();  
-    }              
-
-    function transferHelper(
-        address token,
-        address payable add,
-        uint256 amount
-    ) private {
+    function transferHelper(address token, address payable add, uint256 amount) private {
         if (token == address(0)) {
             add.transfer(amount);
         } else {
@@ -135,85 +115,56 @@ contract StoryCampaign is AccessControl, IERC721Receiver {
     function createCollection(string memory colectionName, string memory colectionSymbol) public onlyOperator {
         collectionAddress = address(new LaunchpadNFT(msg.sender, colectionName, colectionSymbol));
         emit CollectionCreated(address(collectionAddress));
-    }   
-
-    function _mintAndRegisterIp(
-        address recipient,
-        string memory uri
-    ) internal returns (address ipId, uint256 tokenId) {
-
-        tokenId = LaunchpadNFT(collectionAddress).mintTokens(recipient, uri);
-        require(tokenId > 0);
-
-        ipId = IIPAssetRegistry(ipAssetRegistry).register(block.chainid, collectionAddress, tokenId); 
-    }     
+    }
 
     function mintAndRegisterIpAndAttach(
         address recipient,
-        IStoryProtocolGateway.IPMetadata calldata ipMetadata,
+        IPMetadata calldata ipMetadata,
         PILTerms calldata terms
     ) public onlyOperator returns (address ipId, uint256 tokenId, uint256 licenseTermsId) {
         require(userMintCount[recipient] + 1 <= maxIpasset, "StoryCampaign: AboveMintLimit");
 
-        userMintCount[recipient] += 1; 
-        // (ipId, tokenId) = _mintAndRegisterIp(address(this), uri);
-        // //Register and attack PIL
-        // licenseTermsId = _registerPILTermsAndAttach(ipId, terms);
+        userMintCount[recipient] += 1;
 
-        // LaunchpadNFT(collectionAddress).safeTransferFrom(address(this), recipient, tokenId);
-
-        IStoryProtocolGateway(SPG_ADDRESS).mintAndRegisterIpAndAttachPILTerms(collectionAddress, recipient, ipMetadata, terms);
+        IStoryProtocolGateway(SPG_ADDRESS).mintAndRegisterIpAndAttachPILTerms(
+            collectionAddress,
+            recipient,
+            ipMetadata,
+            terms
+        );
     }
 
     function _registerPILTermsAndAttach(
         address ipId,
         PILTerms calldata terms
     ) internal returns (uint256 licenseTermsId) {
-
         licenseTermsId = IPILicenseTemplate(licenseTemplate).registerLicenseTerms(terms);
         // Returns if license terms are already attached.
-        if (ILicenseRegistry(licenseRegistry).hasIpAttachedLicenseTerms(ipId, licenseTemplate, licenseTermsId)) return licenseTermsId;
+        if (ILicenseRegistry(licenseRegistry).hasIpAttachedLicenseTerms(ipId, licenseTemplate, licenseTermsId))
+            return licenseTermsId;
 
-        ILicensingModule(licensingModule).attachLicenseTerms(ipId, licenseTemplate, licenseTermsId);        
-
+        ILicensingModule(licensingModule).attachLicenseTerms(ipId, licenseTemplate, licenseTermsId);
     }
-        
+
     function mintAndRegisterIpAndMakeDerivative(
         MakeDerivative calldata derivData,
         IPMetadata calldata ipMetadata,
         address recipient
     ) external onlyOperator returns (address ipId, uint256 tokenId) {
-
-        require(derivData.parentIpIds.length <= maxParents, "StoryCampaign: AboveParentLimit");
+        require(derivData.parentIpIds.length <= maxParents, "StoryCampaign: Parent Limit Reached");
 
         for (uint256 i = 0; i < derivData.parentIpIds.length; i++) {
-            (, address nftContract,) = getToken(derivData.parentIpIds[i]);
+            (, address nftContract, ) = IIPAccount(payable(derivData.parentIpIds[i])).token();
             require(nftContract == collectionAddress, "StoryCampaign: Ipasset not come from this contest collection");
-        }        
+        }
 
-        tokenId = LaunchpadNFT(collectionAddress).mintTokens(address(this), ipMetadata.nftMetadataURI);
-        require(tokenId > 0);
-
-        ipId = IIPAssetRegistry(ipAssetRegistry).register(block.chainid, collectionAddress, tokenId);
-
-        // MetadataHelper.setMetadata(ipId, address(CORE_METADATA_MODULE), ipMetadata);
-
-        _collectMintFeesAndSetApproval(
-            msg.sender,
-            derivData.parentIpIds,
-            derivData.licenseTermsIds
-        );         
-
-        ILicensingModule(licensingModule).registerDerivative({
-            childIpId: ipId,
-            parentIpIds: derivData.parentIpIds,
-            licenseTermsIds: derivData.licenseTermsIds,
-            licenseTemplate: licenseTemplate,
-            royaltyContext: derivData.royaltyContext
-        });
-
-        LaunchpadNFT(collectionAddress).safeTransferFrom(address(this), recipient, tokenId);
-    } 
+        IStoryProtocolGateway(SPG_ADDRESS).mintAndRegisterIpAndMakeDerivative(
+            collectionAddress,
+            derivData,
+            ipMetadata,
+            recipient
+        );
+    }
 
     /// @dev Aggregate license mint fees for all parent IPs.
     /// @param payerAddress The address of the payer for the license mint fees.
@@ -268,5 +219,5 @@ contract StoryCampaign is AccessControl, IERC721Receiver {
                 IERC20(mintFeeCurrencyToken).forceApprove(royaltyModule, totalMintFee);
             }
         }
-    }      
+    }
 }

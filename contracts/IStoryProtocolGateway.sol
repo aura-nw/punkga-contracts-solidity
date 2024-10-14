@@ -3,23 +3,35 @@ pragma solidity ^0.8.23;
 
 import { PILTerms } from "@story-protocol/protocol-core/contracts/interfaces/modules/licensing/IPILicenseTemplate.sol";
 
+/// @notice Struct for metadata for NFT minting and IP registration.
+/// @dev Leave the nftMetadataURI empty if not minting an NFT.
+/// @param ipMetadataURI The URI of the metadata for the IP.
+/// @param ipMetadataHash The hash of the metadata for the IP.
+/// @param nftMetadataURI The URI of the metadata for the NFT.
+/// @param nftMetadataHash The hash of the metadata for the IP NFT.
+struct IPMetadata {
+    string ipMetadataURI;
+    bytes32 ipMetadataHash;
+    string nftMetadataURI;
+    bytes32 nftMetadataHash;
+}
+
+/// @notice Struct for creating a derivative IP without license tokens.
+/// @param parentIpIds The IDs of the parent IPs to link the registered derivative IP.
+/// @param licenseTemplate The address of the license template to be used for the linking.
+/// @param licenseTermsIds The IDs of the license terms to be used for the linking.
+/// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
+struct MakeDerivative {
+    address[] parentIpIds;
+    address licenseTemplate;
+    uint256[] licenseTermsIds;
+    bytes royaltyContext;
+}
+
 interface IStoryProtocolGateway {
     /// @notice Event emitted when a new NFT collection is created.
     /// @param nftContract The address of the newly created NFT collection.
     event CollectionCreated(address indexed nftContract);
-
-    /// @notice Struct for metadata for NFT minting and IP registration.
-    /// @dev Leave the nftMetadataURI empty if not minting an NFT.
-    /// @param ipMetadataURI The URI of the metadata for the IP.
-    /// @param ipMetadataHash The hash of the metadata for the IP.
-    /// @param nftMetadataURI The URI of the metadata for the NFT.
-    /// @param nftMetadataHash The hash of the metadata for the IP NFT.
-    struct IPMetadata {
-        string ipMetadataURI;
-        bytes32 ipMetadataHash;
-        string nftMetadataURI;
-        bytes32 nftMetadataHash;
-    }
 
     /// @notice Struct for signature data for execution via IP Account.
     /// @param signer The address of the signer for execution with signature.
@@ -29,18 +41,6 @@ interface IStoryProtocolGateway {
         address signer;
         uint256 deadline;
         bytes signature;
-    }
-
-    /// @notice Struct for creating a derivative IP without license tokens.
-    /// @param parentIpIds The IDs of the parent IPs to link the registered derivative IP.
-    /// @param licenseTemplate The address of the license template to be used for the linking.
-    /// @param licenseTermsIds The IDs of the license terms to be used for the linking.
-    /// @param royaltyContext The context for royalty module, should be empty for Royalty Policy LAP.
-    struct MakeDerivative {
-        address[] parentIpIds;
-        address licenseTemplate;
-        uint256[] licenseTermsIds;
-        bytes royaltyContext;
     }
 
     /// @notice Creates a new NFT collection to be used by SPG.
