@@ -153,17 +153,13 @@ contract StoryCampaign is AccessControl, IERC721Receiver {
     ) external onlyOperator returns (address ipId, uint256 tokenId) {
         require(derivData.parentIpIds.length <= maxParents, "StoryCampaign: Parent Limit Reached");
 
-        // for (uint256 i = 0; i < derivData.parentIpIds.length; i++) {
-        //     (, address nftContract, ) = IIPAccount(payable(derivData.parentIpIds[i])).token();
-        //     require(nftContract == collectionAddress, "StoryCampaign: Ipasset not come from this contest collection");
-        // }
-
-        IStoryProtocolGateway(SPG_ADDRESS).mintAndRegisterIpAndMakeDerivative(
+        (ipId, tokenId) = IStoryProtocolGateway(SPG_ADDRESS).mintAndRegisterIpAndMakeDerivative(
             collectionAddress,
             derivData,
             ipMetadata,
             recipient
         );
+        return (ipId, tokenId);
     }
 
     /// @dev Aggregate license mint fees for all parent IPs.
