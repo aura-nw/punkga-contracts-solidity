@@ -29,7 +29,7 @@ forge test
 To deploy the contracts, you can use Foundry's `forge` tool. Before deploying, you must change the constructor's arguments of contract in `args` file (by rename `args_example`).
 
 ```bash
-forge create --rpc-url https://testnet.storyrpc.io --private-key <YOUR_PRIVATE_KEY> contracts/<YOUR_CONTRACT>.sol:<YOUR_CONTRACT> --constructor-args-path args
+forge create --rpc-url https://odyssey.storyrpc.io/ --private-key <YOUR_PRIVATE_KEY> contracts/<YOUR_CONTRACT>.sol:<YOUR_CONTRACT> --constructor-args-path args
 ```
 
 Replace `<YOUR_PRIVATE_KEY>` with your private key, and `<YOUR_CONTRACT>` with the name of the contract you want to deploy.
